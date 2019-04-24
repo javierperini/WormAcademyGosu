@@ -24,18 +24,7 @@ class Snake
   def draw
     init_previous_x = @x
     init_previous_y = @y
-    @body.each do |current_body|
-      # Me guardo la posicion anterior
-      previous_x = current_body.x
-      previous_y = current_body.y
-
-      current_body.set_position(init_previous_x, init_previous_y)
-      current_body.draw
-
-      # Sete la posiciones antet
-      init_previous_y = previous_y
-      init_previous_x = previous_x
-    end
+    @body.each { |current_body| init_previous_x, init_previous_y = draw_body(current_body, init_previous_x, init_previous_y) }
   end
 
   def body_part(init_x, init_y)
@@ -66,6 +55,19 @@ class Snake
   def grow_up
     @vel += 0.5
     @body.push(body_part(@x, @y))
+  end
+
+  private
+
+  def draw_body(current_body, x, y)
+
+    previous_x = current_body.x
+    previous_y = current_body.y
+
+    current_body.set_position(x, y)
+    current_body.draw
+
+    return previous_x, previous_y
   end
 end
 

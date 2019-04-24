@@ -11,7 +11,7 @@ class Game < (Gosu::Window)
   def initialize
     super 640, 480
     self.caption = "Snake"
-    @background_image = Gosu::Image.new("media/background.jpg",tileable: true)
+    @background_image = Gosu::Image.new("media/fond_verde_1.jpg",tileable: true)
     @snake = Snake.new(self.width/2, self.height/2)
     @coins = [build_coin]
   end
@@ -52,7 +52,7 @@ class Game < (Gosu::Window)
   private
 
   def build_coin
-    Coin.new(self.width / 2, self.height / 2)
+    Coin.new(self.width, self.height)
   end
 
   def can_move_direction(key, gp, direction)
