@@ -1,7 +1,7 @@
 module Tiles
-  Grass = 1
-  Water = 2
-  Block = 3
+  Grass = 0
+  Water = 3
+  Block = 2
 end
 
 class Map
@@ -9,14 +9,16 @@ class Map
 
   def initialize
     # Load 60x60 tiles, 5px overlap in all four directions.
-    @tileset = Gosu::Image.load_tiles("media/milkPoolFloor.png", 60, 60, tileable: true)
+    @tileset = Gosu::Image.load_tiles("media/milkPoolFloor.png", 80, 80, tileable: true)
 
-    lines = File.readlines("media/milkPoolMap.txt").map { |line| line.chomp }
-    @height = lines.size
-    @width = lines[0].size
-    @tiles = Array.new(@width) do |x|
-      Array.new(@height) do |y|
-        case lines[y][x, 1]
+    @lines = File.readlines("media/milkPoolMap.txt").map { |line| line.chomp }
+    @height = @lines.size # alto
+    @width = @lines[0].size # El ancho de la matris
+    @tiles = Array.new(@height) do |y|
+      Array.new(@width) do |x|
+        floor = @lines[y][x]
+        1 if floor.nil?
+        case floor
         when 'B'
           Tiles::Block
         when 'W'
@@ -33,13 +35,24 @@ class Map
   def draw
     @height.times do |y|
       @width.times do |x|
-        tile = @tiles[x][y]
+        tile = @tiles[y][x]
         if tile
-          # Draw the tile with an offset (tile images have some overlap)
-          # Scrolling is implemented here just as in the game objects.
-          @tileset[tile].draw(x * 25, y * 25, 0)
+          image = @tileset[tile]
+          image.draw(x * 80, y * 80, 1)
         end
       end
     end
+  end
+
+  def nextPosition(camera_x)
+    camera_x -= 50
+    camera_x = -self.width if camera_x.abs > self.width
+    camera_x
+  end
+
+  def prevPosition(camera_x)
+    camera_x += 50
+    camera_x = 0 if camera_x > 0
+    camera_x
   end
 end
