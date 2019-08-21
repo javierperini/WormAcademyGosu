@@ -1,6 +1,9 @@
 require "gosu"
 require_relative 'map'
-WIDTH, HEIGHT = 640, 480
+require_relative 'player'
+require 'time'
+
+WIDTH, HEIGHT = 1024, 768
 
 module ZOrder
   BACKGROUND, STARS, PLAYER, UI = *0..3
@@ -8,18 +11,21 @@ end
 
 class Game < (Gosu::Window)
   def initialize
-    super 1024,768
+    super WIDTH, HEIGHT
     self.caption = "Milk pool"
     @map = Map.new
-    # The scrolling position is stored as top left corner of the screen.
-    @camera_x = @camera_y = 0
-
-    @camera_x = @map.width * 50 - WIDTH
-    @camera_y = @map.height * 50 - HEIGHT
+    @camera_x = 0
+    @camera_y = -50 # Tiene que estar un poco mas arriba que nuestros elemetos de fondo
+    @background_image = Gosu::Image.new("media/Fondo3.jpg")
+    @player = Player.new(0,660) #CALCULAR MEJOR EL NUMERO
+    @pressing = false
+    @last_pressing_time = Time.now
   end
 
   def draw
-    #@background_image.draw(0, 0, ZOrder::BACKGROUND)
+    @background_image.draw(0, 0, ZOrder::BACKGROUND)
+    @player.draw
+    # Mueve la camara
     Gosu.translate(-@camera_x, -@camera_y) do
       @map.draw
     end
@@ -27,20 +33,22 @@ class Game < (Gosu::Window)
 
   def update
 
+    press_key = false
 
-    if key_down?(Gosu::KB_UP, Gosu::GP_UP)
-
-    end
-    if key_down?(Gosu::KB_DOWN, Gosu::GP_DOWN)
-    end
-
-    if key_down?(Gosu::KB_LEFT, Gosu::GP_LEFT)
-      @camera_x = @map.prevPosition(@camera_x)
+    if key_down?(Gosu::KB_RIGHT, Gosu::GP_RIGHT) && !@pressing
+      @player.addCoin
+      press_key = true
+      @pressing = true
+      @last_pressing_time = Time.now
     end
 
-    if key_down?(Gosu::KB_RIGHT, Gosu::GP_RIGHT)
-      @camera_x = @map.nextPosition(@camera_x)
+    unless press_key
+      @player.removeCoin(Time.now - @last_pressing_time)
     end
+
+    can_move = @player.move_right
+    @camera_x = @map.nextPosition(@camera_x) if can_move
+
   end
 
   def button_down(id)
@@ -53,12 +61,13 @@ class Game < (Gosu::Window)
 
   private
 
-  def key_down?(gp, key)
-    Gosu.button_down? key or Gosu.button_down? gp
-  end
+    def key_down?(gp, key)
+      Gosu.button_down? key or Gosu.button_down? gp
+    end
 
-    def can_move_direction(key, gp)
-
+    def button_up(id)
+      super id
+      @pressing = id != Gosu::KB_RIGHT
     end
 
     def key_down?(gp, key)

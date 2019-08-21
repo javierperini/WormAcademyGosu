@@ -1,20 +1,62 @@
 module Tiles
   Grass = 0
-  Water = 3
-  Block = 2
+  Water = 8
+  Block = 12
 end
 
 class Map
   attr_reader :width, :height
 
   def initialize
-    # Load 60x60 tiles, 5px overlap in all four directions.
-    @tileset = Gosu::Image.load_tiles("media/milkPoolFloor.png", 80, 80, tileable: true)
-
+    @square = 80
+    @tileset = Gosu::Image.load_tiles("media/milkPoolFloor.png", @square, @square, tileable: true)
     @lines = File.readlines("media/milkPoolMap.txt").map { |line| line.chomp }
+
     @height = @lines.size # alto
     @width = @lines[0].size # El ancho de la matris
-    @tiles = Array.new(@height) do |y|
+    @tiles = buildMap
+  end
+
+  def draw
+    @height.times do |y|
+      @width.times do |x|
+        tile = @tiles[y][x]
+        drawTile(tile, x, y) if tile
+      end
+    end
+  end
+
+  def prevPosition(camera_x)
+    diff = camera_x - 50
+    exceedStartMap(diff) ? 0 : diff
+  end
+
+  def nextPosition(camera_x)
+    diff = camera_x + 50
+    exceedEndMap(diff) ? endMapToPixel : diff
+  end
+
+  private
+
+  def drawTile(tile, x, y)
+    image = @tileset[tile]
+    image.draw(x * @square + 1, y * @square + 1, 1)
+  end
+
+  def exceedEndMap(camera_x)
+    camera_x > endMapToPixel
+  end
+
+  def exceedStartMap(camera_x)
+    camera_x <= 0
+  end
+
+  def endMapToPixel
+    @width * 56 # Averiguar de donde sale 56
+  end
+
+  def buildMap
+    Array.new(@height) do |y|
       Array.new(@width) do |x|
         floor = @lines[y][x]
         1 if floor.nil?
@@ -30,29 +72,5 @@ class Map
         end
       end
     end
-  end
-
-  def draw
-    @height.times do |y|
-      @width.times do |x|
-        tile = @tiles[y][x]
-        if tile
-          image = @tileset[tile]
-          image.draw(x * 80, y * 80, 1)
-        end
-      end
-    end
-  end
-
-  def nextPosition(camera_x)
-    camera_x -= 50
-    camera_x = -self.width if camera_x.abs > self.width
-    camera_x
-  end
-
-  def prevPosition(camera_x)
-    camera_x += 50
-    camera_x = 0 if camera_x > 0
-    camera_x
   end
 end
