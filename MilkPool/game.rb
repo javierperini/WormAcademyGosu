@@ -46,9 +46,12 @@ class Game < (Gosu::Window)
       @player.removeCoin(Time.now - @last_pressing_time)
     end
 
-    can_move = @player.move_right
-    @camera_x = @map.nextPosition(@camera_x) if can_move
+    if key_down?(Gosu::KB_SPACE, Gosu::KB_SPACE) #&& @map.can_jump?(@player)
+      @player.prepare_jump
+    end
 
+    current_position = @player.update
+    @camera_x = @map.nextPosition(@camera_x) if @map.can_move_camera?(current_position)
   end
 
   def button_down(id)

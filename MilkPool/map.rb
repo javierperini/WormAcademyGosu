@@ -17,6 +17,14 @@ class Map
     @tiles = buildMap
   end
 
+  def half_screen
+    512
+  end
+
+  def can_move_camera?(position)
+    position >= half_screen
+  end
+
   def draw
     @height.times do |y|
       @width.times do |x|
@@ -34,6 +42,11 @@ class Map
   def nextPosition(camera_x)
     diff = camera_x + 50
     exceedEndMap(diff) ? endMapToPixel : diff
+  end
+
+  def can_jump?(player)
+    tile = @tiles[player.y][player.x.round]
+    !tile.nil? && tile == Tiles::Block
   end
 
   private
