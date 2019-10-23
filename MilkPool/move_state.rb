@@ -1,3 +1,4 @@
+require 'nmatrix'
 
 module Move
   STANDING = 0
@@ -19,6 +20,7 @@ class PlayerState
   def initialize(player)
     @player = player
     @ticks = 60
+    @factor = 3.0
   end
 
   def update(_)
@@ -92,25 +94,53 @@ class Running < PlayerState
 
   def prepare_jump
     @player.y = @player.ground_position - 1
+
   end
+
+
 end
 
 class Jumping < PlayerState
+  attr_accessor :coeff_a, :coeff_b, :coeff_c
+
   def initialize(player)
     super(player)
+    calculate_coeffs
     calculateJumpPosition
     @running_tiles = build_running_tiles(@ticks)
   end
 
-  def calculateJumpPosition
+  def calculate_coeffs
     xi = @player.x
-    xf = @player.x + 100
-    step_size = 1
-    @jumpPositions = (xi..xf).step(step_size).inject([]) { |memo, x| memo << [x, @player.ground_position + calc_y_position(x, xi, xf)]}
+    xf = @player.x + [10 + (@player.coin * @factor).round, 100].min
+     xm = (xf+xi) / 2.0
+    h =  [(@player.coin * 15.0).round, 300].min
+
+    coeffs =  NMatrix.new([3,3], [xi**2, xi, 1,
+                                  xf**2, xf, 1,
+                                  xm**2, xm, 1], dtype: :float32)
+
+    rhs = NMatrix.new([3,1], [0, 0, h], dtype: :float32)
+
+    solution = coeffs.solve(rhs)
+    @coeff_a = solution[0]
+    @coeff_b = solution[1]
+    @coeff_c = solution[2]
   end
 
-  def calc_y_position(x, xi, xf)
-    x * x - xf * x - xi * x + xi * xf
+  def calculateJumpPosition
+    xi = @player.x
+    xf =  @player.x + [10 + (@player.coin * @factor).round, 100].min
+    step_size = 0.5
+     @jumpPositions = (xi..xf).step(step_size).inject([]) { |memo, x| memo << [x, @player.ground_position - calculate_y_position(xi, xf, x)]}
+  end
+
+  def calculate_y_position(xi, xf, x)
+    if xi != x && xf != x
+      @coeff_a * (x ** 2) + @coeff_b * x + @coeff_c
+    else
+      0.0
+    end
   end
 
   def next_state

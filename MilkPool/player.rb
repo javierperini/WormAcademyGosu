@@ -23,11 +23,11 @@ class Player
   end
 
   def addCoin
-    @coin += 6 if @coin <= 16
+    @coin += 5 if @coin <= 20
   end
 
   def removeCoin(tick_diff)
-    @coin -= 0.7 if @coin > 0
+    @coin -= 0.5 if @coin > 0
   end
 
   def prepare_jump
