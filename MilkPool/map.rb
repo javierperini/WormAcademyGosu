@@ -5,7 +5,7 @@ module Tiles
 end
 
 class Map
-  attr_reader :width, :height
+  attr_reader :width, :height, :exceed
 
   def initialize
     @square = 80
@@ -15,6 +15,7 @@ class Map
     @height = @lines.size # alto
     @width = @lines[0].size # El ancho de la matris
     @tiles = buildMap
+    @exceed = false
   end
 
   def half_screen
@@ -41,12 +42,28 @@ class Map
 
   def nextPosition(camera_x)
     diff = camera_x + 50
-    exceedEndMap(diff) ? endMapToPixel : diff
+    @exceed = true
+    diff
   end
 
-  def can_jump?(player)
-    tile = @tiles[player.y][player.x.round]
-    !tile.nil? && tile == Tiles::Block
+  def can_jump?(player, camera)
+    tile = get_ground_tile(player, camera)
+    !tile.nil? and tile == Tiles::Block
+  end
+
+  def on_water?(player, camera)
+    tile = get_ground_tile(player, camera)
+    !tile.nil? and tile == Tiles::Water
+  end
+
+  def get_ground_tile(player, camera)
+    x = player.x.round
+    select_tile = ((x + camera)/@square).round
+    @tiles[8][select_tile]
+  end
+
+  def endMapToPixel
+    @width * 56 # Averiguar de donde sale 56
   end
 
   private
@@ -62,10 +79,6 @@ class Map
 
   def exceedStartMap(camera_x)
     camera_x <= 0
-  end
-
-  def endMapToPixel
-    @width * 56 # Averiguar de donde sale 56
   end
 
   def buildMap

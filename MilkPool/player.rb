@@ -17,9 +17,9 @@ class Player
     @current_state.draw
   end
 
-  def update
+  def update(map, camera)
     @current_state = @current_state.next_state
-    @current_state.update(@x + @coin)
+    @current_state.update(@x + @coin, map, camera)
   end
 
   def addCoin

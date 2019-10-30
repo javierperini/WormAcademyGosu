@@ -7,6 +7,7 @@ module Move
   RUN_1 = 3
   RUN_2 = 4
   RUN_3 = 5
+  WIN = 11
   JUMP = 120
 end
 
@@ -14,6 +15,7 @@ module State
   STANDING = 0
   RUNNING = 1
   JUMPING = 2
+  LANDING = 3
 end
 
 class PlayerState
@@ -23,7 +25,7 @@ class PlayerState
     @factor = 3.0
   end
 
-  def update(_)
+  def update(_, _, _)
     @player.x
   end
 
@@ -72,8 +74,8 @@ class Running < PlayerState
     @running_tiles = build_running_tiles(@ticks)
   end
 
-  def update(move_x)
-    @player.x = move_x
+  def update(move_x, map, _)
+    @player.x = move_x if !map.exceed
     @player.x
   end
 
@@ -145,10 +147,10 @@ class Jumping < PlayerState
 
   def next_state
     return self if !@jumpPositions.empty?
-    return Running.new(@player)
+    return Landing.new(@player)
   end
 
-  def update(_)
+  def update(_, _, _)
     @player.x, @player.y = @jumpPositions.shift
     @player.x
   end
@@ -160,5 +162,36 @@ class Jumping < PlayerState
 
   def getImage
     @player.tileset[@running_tiles.rotate!.first]
+  end
+end
+
+class Landing < PlayerState
+  def initialize(player)
+    super(player)
+    @map = nil
+    @camera = nil
+  end
+
+  def getImage
+    @player.tileset[Move::WIN]
+  end
+
+  def win?
+    !@camera.nil? && !@map.nil? && !@map.on_water?(@player, @camera)
+  end
+
+  def update(_, map, camera)
+    @map = map
+    @camera = camera
+
+    if !win?
+      @player.y += 1 unless @player.y > 10000;
+    end
+
+    @player.x
+  end
+
+  def next_state
+    self
   end
 end
