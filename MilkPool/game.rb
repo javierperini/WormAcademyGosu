@@ -25,6 +25,13 @@ class Game < (Gosu::Window)
   def draw
     @background_image.draw(0, 0, ZOrder::BACKGROUND)
     @player.draw
+    if @player.win?
+      a = Gosu::Image.from_text(
+          self, 'No me rompi la nariz!!!', "Verdana", 45)
+
+      a.draw(377.5,277.5,0)
+    end
+
     # Mueve la camara
     Gosu.translate(-@camera_x, -@camera_y) do
       @map.draw
@@ -51,7 +58,7 @@ class Game < (Gosu::Window)
     end
 
     current_position = @player.update(@map, @camera_x)
-    if @map.can_move_camera?(current_position) && press_key
+    if @map.can_move_camera?(current_position, @camera_x) && @player.can_move? && press_key
       @camera_x = @map.nextPosition(@camera_x)
     end
   end

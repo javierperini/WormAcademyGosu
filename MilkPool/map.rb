@@ -22,8 +22,8 @@ class Map
     512
   end
 
-  def can_move_camera?(position)
-    position >= half_screen
+  def can_move_camera?(position, camera)
+    position >= half_screen &&  camera < 2500
   end
 
   def draw

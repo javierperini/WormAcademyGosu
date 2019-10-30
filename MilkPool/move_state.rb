@@ -35,6 +35,14 @@ class PlayerState
 
   def prepare_jump
   end
+
+  def win?
+    false
+  end
+
+  def can_move?
+    true
+  end
 end
 
 class Standing < PlayerState
@@ -193,5 +201,9 @@ class Landing < PlayerState
 
   def next_state
     self
+  end
+
+  def can_move?
+    false
   end
 end
