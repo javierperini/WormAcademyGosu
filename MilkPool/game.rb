@@ -16,22 +16,17 @@ class Game < (Gosu::Window)
     @map = Map.new
     @camera_x = 0
     @camera_y = -50 # Tiene que estar un poco mas arriba que nuestros elemetos de fondo
-    @background_image = Gosu::Image.new("media/Fondo3.jpg")
+    @background_image = Gosu::Image.new("media/fondo4.jpg")
     @player = Player.new(0,660) #CALCULAR MEJOR EL NUMERO
     @pressing = false
     @last_pressing_time = Time.now
+    @background_sound = Gosu::Song.new("media/sounds/backgroundsound.mp3")
   end
 
   def draw
-    @background_image.draw(0, 0, ZOrder::BACKGROUND)
+    @background_image.draw_rot(300, 300, ZOrder::BACKGROUND, 0)
     @player.draw
-    if @player.win?
-      a = Gosu::Image.from_text(
-          self, 'No me rompi la nariz!!!', "Verdana", 45)
-
-      a.draw(377.5,277.5,0)
-    end
-
+    @player.build_text(self)
     # Mueve la camara
     Gosu.translate(-@camera_x, -@camera_y) do
       @map.draw
@@ -39,7 +34,6 @@ class Game < (Gosu::Window)
   end
 
   def update
-
     press_key = false
 
     if key_down?(Gosu::KB_RIGHT, Gosu::GP_RIGHT) && !@pressing
@@ -50,7 +44,7 @@ class Game < (Gosu::Window)
     end
 
     unless press_key
-      @player.removeCoin(Time.now - @last_pressing_time)
+      @player.removeCoin
     end
 
     if key_down?(Gosu::KB_SPACE, Gosu::KB_SPACE) && @map.can_jump?(@player, @camera_x)

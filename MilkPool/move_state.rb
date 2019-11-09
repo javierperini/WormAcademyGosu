@@ -1,4 +1,5 @@
 require 'nmatrix'
+require 'gosu'
 
 module Move
   STANDING = 0
@@ -18,11 +19,25 @@ module State
   LANDING = 3
 end
 
+module Text
+  WINNER_TEXT = "No me rompi la nariz!!!!!"
+  LOSER_TEXT  = "Noo mi nariz esta rota!!!"
+end
+
+FONT_ASSETS = {
+    font: "media/fonts/pixelade-webfont.ttf"
+}
+
 class PlayerState
   def initialize(player)
     @player = player
     @ticks = 60
     @factor = 3.0
+    @played = false
+  end
+
+  def on_water?(map, camera)
+    map.on_water?(@player, camera)
   end
 
   def update(_, _, _)
@@ -36,12 +51,24 @@ class PlayerState
   def prepare_jump
   end
 
+  def next_state(_, _)
+  end
+
   def win?
     false
   end
 
   def can_move?
     true
+  end
+
+  def text(_)
+
+  end
+
+  def build_text(game, text, color)
+    @font = Gosu::Font.new(game, FONT_ASSETS[:font], 40)
+    @font.draw_text(text, 250.5, 177.5, 0, 2, 1, color)
   end
 end
 
@@ -51,7 +78,8 @@ class Standing < PlayerState
      @standing_tiles = build_blink_tiles(@ticks)
    end
 
-  def next_state
+  def next_state(map, camera)
+    return Sinking.new(@player) if on_water?(map, camera)
     return self if @player.coin <= 0
     return PrepareRunning.new(@player)
   end
@@ -67,7 +95,7 @@ end
 
 class PrepareRunning < PlayerState
 
-  def next_state
+  def next_state(_, _)
     return Running.new(@player)
   end
 
@@ -82,14 +110,16 @@ class Running < PlayerState
     @running_tiles = build_running_tiles(@ticks)
   end
 
-  def update(move_x, map, _)
+  def update(move_x, map, camera)
     @player.x = move_x if !map.exceed
     @player.x
   end
 
-  def next_state
+  def next_state(map, camera)
+    coin = @player.coin
+    return Sinking.new(@player) if on_water?(map, camera)
     return Jumping.new(@player) if @player.y == (@player.ground_position - 1)
-    return self if @player.coin > 0 and @player.coin < 17
+    return self if coin > 0
     return Standing.new(@player)
   end
 
@@ -99,15 +129,13 @@ class Running < PlayerState
   end
 
   def getImage
-    @player.tileset[@running_tiles.rotate!.first]
+    tile = @running_tiles.rotate!.first
+    @player.tileset[tile]
   end
 
   def prepare_jump
     @player.y = @player.ground_position - 1
-
   end
-
-
 end
 
 class Jumping < PlayerState
@@ -153,9 +181,14 @@ class Jumping < PlayerState
     end
   end
 
-  def next_state
+  def win?(camera, map)
+    !camera.nil? && !map.nil? && !on_water?(map, camera)
+  end
+
+  def next_state(map, camera)
     return self if !@jumpPositions.empty?
-    return Landing.new(@player)
+    return Sinking.new(@player) if on_water?(map, camera)
+    return Winning.new(@player) if win?(camera, map)
   end
 
   def update(_, _, _)
@@ -176,34 +209,78 @@ end
 class Landing < PlayerState
   def initialize(player)
     super(player)
-    @map = nil
-    @camera = nil
   end
 
   def getImage
     @player.tileset[Move::WIN]
   end
 
-  def win?
-    !@camera.nil? && !@map.nil? && !@map.on_water?(@player, @camera)
+  def drawText
+  end
+
+  def getSound
+  end
+
+  def playSong
+    getSound.play
+    @played = true
+  end
+
+  def draw
+    playSong unless @played
+    getImage.draw(@player.x, @player.y, 2)
   end
 
   def update(_, map, camera)
-    @map = map
-    @camera = camera
-
-    if !win?
-      @player.y += 1 unless @player.y > 10000;
-    end
-
     @player.x
   end
 
-  def next_state
+  def next_state(map, camera)
     self
   end
 
   def can_move?
     false
+  end
+end
+
+class Sinking < Landing
+  def initialize(player)
+    super(player)
+  end
+
+  def getSound
+    Gosu::Song.new("media/sounds/loser.mp3")
+  end
+
+  def update(_, map, camera)
+    @player.y += 1 unless @player.y > 10000
+    @player.x
+  end
+
+  def text(game)
+    build_text(game, Text::LOSER_TEXT, Gosu::Color::RED)
+  end
+
+  def win?
+    false
+  end
+end
+
+class Winning < Landing
+  def initialize(player)
+    super(player)
+  end
+
+  def getSound
+    Gosu::Song.new("media/sounds/winner.mp3")
+  end
+
+  def text(game)
+    build_text(game, Text::WINNER_TEXT, Gosu::Color::YELLOW)
+  end
+
+  def win?
+    true
   end
 end

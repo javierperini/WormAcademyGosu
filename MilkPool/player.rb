@@ -21,12 +21,16 @@ class Player
     @current_state.can_move?
   end
 
+  def build_text(game)
+    @current_state.text(game)
+  end
+
   def win?
     @current_state.win?
   end
 
   def update(map, camera)
-    @current_state = @current_state.next_state
+    @current_state = @current_state.next_state(map, camera)
     @current_state.update(@x + @coin, map, camera)
   end
 
@@ -34,7 +38,7 @@ class Player
     @coin += 5 if @coin <= 20
   end
 
-  def removeCoin(tick_diff)
+  def removeCoin
     @coin -= 0.5 if @coin > 0
   end
 
