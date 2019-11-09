@@ -24,10 +24,6 @@ module Text
   LOSER_TEXT  = "Noo mi nariz esta rota!!!"
 end
 
-FONT_ASSETS = {
-    font: "media/fonts/pixelade-webfont.ttf"
-}
-
 class PlayerState
   def initialize(player)
     @player = player
@@ -54,7 +50,7 @@ class PlayerState
   def next_state(_, _)
   end
 
-  def win?
+  def win?(_,_)
     false
   end
 
@@ -67,7 +63,7 @@ class PlayerState
   end
 
   def build_text(game, text, color)
-    @font = Gosu::Font.new(game, FONT_ASSETS[:font], 40)
+    @font = Gosu::Font.new(game, "media/fonts/pixelade-webfont.ttf", 40)
     @font.draw_text(text, 250.5, 177.5, 0, 2, 1, color)
   end
 end
@@ -76,6 +72,7 @@ class Standing < PlayerState
    def initialize(player)
      super(player)
      @standing_tiles = build_blink_tiles(@ticks)
+     puts "ESTOY PARADO"
    end
 
   def next_state(map, camera)
@@ -116,10 +113,9 @@ class Running < PlayerState
   end
 
   def next_state(map, camera)
-    coin = @player.coin
     return Sinking.new(@player) if on_water?(map, camera)
     return Jumping.new(@player) if @player.y == (@player.ground_position - 1)
-    return self if coin > 0
+    return self if @player.coin > 0
     return Standing.new(@player)
   end
 
@@ -262,7 +258,7 @@ class Sinking < Landing
     build_text(game, Text::LOSER_TEXT, Gosu::Color::RED)
   end
 
-  def win?
+  def win?(_,_)
     false
   end
 end
@@ -280,7 +276,7 @@ class Winning < Landing
     build_text(game, Text::WINNER_TEXT, Gosu::Color::YELLOW)
   end
 
-  def win?
+  def win?(_,_)
     true
   end
 end

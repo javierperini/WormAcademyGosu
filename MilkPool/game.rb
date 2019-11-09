@@ -1,60 +1,28 @@
 require "gosu"
 require_relative 'map'
 require_relative 'player'
+require_relative 'stage'
 require 'time'
 
 WIDTH, HEIGHT = 1024, 768
-
-module ZOrder
-  BACKGROUND, STARS, PLAYER, UI = *0..3
-end
 
 class Game < (Gosu::Window)
   def initialize
     super WIDTH, HEIGHT
     self.caption = "Milk pool"
-    @map = Map.new
-    @camera_x = 0
-    @camera_y = -50 # Tiene que estar un poco mas arriba que nuestros elemetos de fondo
-    @background_image = Gosu::Image.new("media/fondo4.jpg")
     @player = Player.new(0,660) #CALCULAR MEJOR EL NUMERO
-    @pressing = false
-    @last_pressing_time = Time.now
-    @background_sound = Gosu::Song.new("media/sounds/backgroundsound.mp3")
+    @current_stage = InitStage.new(@player, self)
   end
 
   def draw
-    @background_image.draw_rot(300, 300, ZOrder::BACKGROUND, 0)
-    @player.draw
-    @player.build_text(self)
-    # Mueve la camara
-    Gosu.translate(-@camera_x, -@camera_y) do
-      @map.draw
-    end
+    @current_stage.draw
   end
 
   def update
-    press_key = false
-
-    if key_down?(Gosu::KB_RIGHT, Gosu::GP_RIGHT) && !@pressing
-      @player.addCoin
-      press_key = true
-      @pressing = true
-      @last_pressing_time = Time.now
-    end
-
-    unless press_key
-      @player.removeCoin
-    end
-
-    if key_down?(Gosu::KB_SPACE, Gosu::KB_SPACE) && @map.can_jump?(@player, @camera_x)
-      @player.prepare_jump
-    end
-
-    current_position = @player.update(@map, @camera_x)
-    if @map.can_move_camera?(current_position, @camera_x) && @player.can_move? && press_key
-      @camera_x = @map.nextPosition(@camera_x)
-    end
+    @current_stage = @current_stage.next_stage
+    press_right = key_down?(Gosu::KB_RIGHT, Gosu::GP_RIGHT)
+    press_space = key_down?(Gosu::KB_SPACE, Gosu::KB_SPACE)
+    @current_stage.update(press_right, press_space)
   end
 
   def button_down(id)
@@ -65,20 +33,14 @@ class Game < (Gosu::Window)
     end
   end
 
-  private
+  def button_up(id)
+    super id
+    @current_stage.pressing = id != Gosu::KB_RIGHT
+  end
 
-    def key_down?(gp, key)
-      Gosu.button_down? key or Gosu.button_down? gp
-    end
-
-    def button_up(id)
-      super id
-      @pressing = id != Gosu::KB_RIGHT
-    end
-
-    def key_down?(gp, key)
-      Gosu.button_down? key or Gosu.button_down? gp
-    end
+  def key_down?(gp, key)
+    Gosu.button_down? key or Gosu.button_down? gp
+  end
 end
 
 Game.new.show if __FILE__ == $0

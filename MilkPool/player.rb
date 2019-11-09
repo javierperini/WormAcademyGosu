@@ -25,8 +25,8 @@ class Player
     @current_state.text(game)
   end
 
-  def win?
-    @current_state.win?
+  def win?(camera, map)
+    @current_state.win?(camera, map)
   end
 
   def update(map, camera)
